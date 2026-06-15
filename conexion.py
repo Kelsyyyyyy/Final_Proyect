@@ -1,5 +1,7 @@
+import pip 
 import mysql.connector
-from mysql.connector import Error
+
+print(mysql.connector.__version__)
 
 def crear_conexion():
     conexion = None
