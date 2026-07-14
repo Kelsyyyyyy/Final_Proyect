@@ -1,28 +1,54 @@
-print("\033c")
-print("\n\t -----Programa para venta de agua purificada-----\t\n")
-
+#Install nanoid to run
+import mysql.connector
+from mysql.connector import Error
+from nanoid import generate
 PRECIO_MEDIO = 10
 PRECIO_COMPLETO = 18
 PRECIO_LITRO = 4
+def connector():
+    conection=None 
+    try:
+        conection=mysql.connector.connect(
+                host="localhost",
+                user="root",
+                password="",
+                database="Usuario",
+                port=3306
+                )
+        if conection.is_connected():
+            print("The connection has been sucessful ")
+            return conection
+    except Error as e:
+        print(f"Error connection MySQL: {e} ")
+        return None
+def close_conection(conection):
+    if conection is None and conection.is_connected():
+        conection.close()
+        print ("The conection to MySQL has been closed ")
+def ID():
+    alfabet="0123456789"
+    size=8
+    id_order= generate(alfabet, size)
+    return id_order
 
 def obtener_producto(mensaje):
     while True:
         caso = input(mensaje).lower().strip()
-        if caso == "medio":
+        if caso == "half":
             return 10, PRECIO_MEDIO
-        elif caso == "completo":
+        elif caso == "full":
             return 20, PRECIO_COMPLETO
-        elif caso == "litro":
+        elif caso == "liter":
             return 1, PRECIO_LITRO
         else:
-            print("  ⚠ Opción no válida. Escribe: Medio, Completo o Litro.")
+            print("  ⚠ Invalid option. Write: Half, Full or Liter.")
 
 def pedir_sino(mensaje):
     while True:
         respuesta = input(mensaje).lower().strip()
-        if respuesta in ("si", "no"):
+        if respuesta in ("yes", "no"):
             return respuesta
-        print("  ⚠ Respuesta no válida. Escribe: Si o No.")
+        print("  ⚠ Invalid Answer. Write: Yes or No.")
 
 def calcular_totales(litros, precio):
     descuento = precio * 0.10 if litros >= 20 else 0
@@ -32,46 +58,57 @@ def calcular_totales(litros, precio):
     return descuento, iva, total_con_iva
 
 def mostrar_ticket(num_cliente, litros, subtotal, descuento, iva, total):
-    print(f"\n  El cliente {num_cliente} compro: {litros} litros")
+    print(f"\n  The client {num_cliente} bought: {litros} liters")
     print(f"  Subtotal:       ${subtotal:.2f}")
-    print(f"  Descuento:     -${descuento:.2f}")
+    print(f"  Discount:     -${descuento:.2f}")
     print(f"  IVA (16%):      ${iva:.2f}")
-    print(f"  Total a pagar:  ${total:.2f}")
+    print(f"  Total Due:  ${total:.2f}")
+
 
 def mostrar_resumen(clientes, total_litros, total_pesos, total_descuentos):
-    print("\n\t -----Resumen del dia-----")
-    print(f"  Clientes atendidos:       {clientes}")
-    print(f"  Total litros vendidos:    {total_litros} L")
-    print(f"  Total recaudado:          ${total_pesos:.2f}")
-    print(f"  Total descuentos dados:   ${total_descuentos:.2f}")
+    print("\n\t -----Day Resume-----")
+    print(f"  Costumers Reached:       {clientes}")
+    print(f"  Liters Selled:    {total_litros} L")
+    print(f"  Total Collected:          ${total_pesos:.2f}")
+    print(f"  Total Discount Amount:   ${total_descuentos:.2f}")
     if clientes > 0:
-        print(f"  Promedio litros/cliente:  {total_litros / clientes:.2f} L")
-        print(f"  Promedio venta/cliente:   ${total_pesos / clientes:.2f}")
+        print(f"  Average liters/client:  {total_litros / clientes:.2f} L")
+        print(f"  Average sell/client:   ${total_pesos / clientes:.2f}")
     else:
-        print("  No se atendió ningún cliente; no hay promedios que calcular.")
-
+        print("  No costumers were served; there is not average to calculate.")
 i = 0
 acumt_l = 0
 acumt_p = 0
 total_descuento = 0
-repeticion = "si"
+repeticion = "yes"
+print("\033c")
+#Connection
+if __name__ == "__main__":
+    mi_conexion = connector()
+    if mi_conexion:
+        cursor = mi_conexion.cursor()      
 
-while repeticion == "si":
+print("\n\t -----Sales software for purified water-----\t\n")
+
+print("Libro registrado correctamente.")
+
+while repeticion == "yes":
+    ID_client=ID()
     i += 1
     acumc_l = 0
     acumc_p = 0
-    print(f"\n\t  Captura {i}  \t\n")
+    print(f"\n\t  Capture {i}  \t\n")
 
-    litros, costo = obtener_producto("Que compro el cliente? (Medio/Completo/Litro): ")
+    litros, costo = obtener_producto("What did the costumer bought? (Half/Full/Liter): ")
     acumc_l += litros
     acumc_p += costo
 
-    extra = pedir_sino("El cliente compro mas? (Si/No): ")
-    while extra == "si":
-        litros, costo = obtener_producto("Que compro el cliente? (Medio/Completo/Litro): ")
+    extra = pedir_sino("Did the costumer bought more? (Yes/No): ")
+    while extra == "yes":
+        litros, costo = obtener_producto("What did the costumer bought? (Half/Full/Liter): ")
         acumc_l += litros
         acumc_p += costo
-        extra = pedir_sino("El cliente compro mas? (Si/No): ")
+        extra = pedir_sino("Did the costumer bought more? (Yes/No): ")
 
     acumt_l += acumc_l
 
@@ -80,7 +117,14 @@ while repeticion == "si":
     acumt_p += total_con_iva
 
     mostrar_ticket(i, acumc_l, acumc_p, descuento, iva, total_con_iva)
-
-    repeticion = pedir_sino("\nDesea realizar otra captura? (Si/No): ")
+    try:
+        query = "INSERT INTO litros (ID, litros, precio, fecha, hora) VALUES (%s, %s, %s, %s, %s)"
+        cursor.execute(query, (ID_client, acumc_l, total_con_iva))
+        mi_conexion.commit() 
+        print("  ✓ Venta registrada en la Base de Datos.")
+    
+    except Error as e:
+        print(f"  ❌ Error al guardar en la BD: {e}")
+    repeticion = pedir_sino("\nDo you wish to make another order? (Yes/No): ")
 
 mostrar_resumen(i, acumt_l, acumt_p, total_descuento)
