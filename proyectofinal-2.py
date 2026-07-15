@@ -2,9 +2,19 @@
 import mysql.connector
 from mysql.connector import Error
 from nanoid import generate
-PRECIO_MEDIO = 10
-PRECIO_COMPLETO = 18
-PRECIO_LITRO = 4
+
+def starting():
+    return
+    PRECIO_MEDIO = 10
+    PRECIO_COMPLETO = 18
+    PRECIO_LITRO = 4
+    i = 0
+    acumt_l = 0
+    acumt_p = 0
+    total_descuento = 0
+    repeticion = "yes"
+    print("\033c")
+
 def connector():
     conection=None 
     try:
@@ -12,7 +22,7 @@ def connector():
                 host="localhost",
                 user="root",
                 password="",
-                database="Usuario",
+                database="usuario",
                 port=3306
                 )
         if conection.is_connected():
@@ -107,24 +117,66 @@ def search_order(cursor):
     except Error as e:
         print(f" Error executing search query: {e}")
 
+def menu(menu):   
+        print("=== PURIFIED WATER SYSTEM ===")
+        print("1. Register a new sale")
+        print("2. Search for an existing order")
+        menu = input("Choose an option (1 or 2): ").strip()
+        return menu
+
+def venta():
+    print("\n\t -----Sales software for purified water-----\t\n")
+
+    while repeticion == "yes":
+                ID_client = ID()
+                i += 1
+                acumc_l = 0
+                acumc_p = 0
+                print(f"\n\t  Capture {i}  \t\n")
+
+                litros, costo = obtener_producto("What did the costumer bought? (Half/Full/Liter): ")
+                acumc_l += litros
+                acumc_p += costo
+                fecha = input(" Date of the order (Format: YYYY-MM-DD, Example: 2026-01-02): ")
+                hora = input(" Put the hour of the order (Format 24h: HH:MM:SS, Example: 23:59:00): ")
+                
+                extra = pedir_sino("Did the costumer bought more? (Yes/No): ")
+                while extra == "yes":
+                    litros, costo = obtener_producto("What did the costumer bought? (Half/Full/Liter): ")
+                    acumc_l += litros
+                    acumc_p += costo
+                    extra = pedir_sino("Did the costumer bought more? (Yes/No): ")
+
+                acumt_l += acumc_l
+
+                descuento, iva, total_con_iva = calcular_totales(acumc_l, acumc_p)
+                total_descuento += descuento
+                acumt_p += total_con_iva
+                
+                mostrar_ticket(ID_client, acumc_l, acumc_p, descuento, iva, total_con_iva)
+                
+                try:
+                    query = "INSERT INTO litros (ID, litros, precio, fecha, hora) VALUES (%s, %s, %s, %s, %s)"
+                    cursor.execute(query, (ID_client, acumc_l, total_con_iva, fecha, hora))
+                    mi_conexion.commit() 
+                    print("  Sell registered on the database! ")
+                except Error as e:
+                    print(f"  Error saving on the database: {e}")
+                    
+                repeticion = pedir_sino("\nDo you wish to make another order? (Yes/No): ")
+                
+            mostrar_resumen(i, acumt_l, acumt_p, total_descuento)
+starting()
+
 #IMPORTANTE ARREGLAR DESMADRE
-i = 0
-acumt_l = 0
-acumt_p = 0
-total_descuento = 0
-repeticion = "yes"
-print("\033c")
 if __name__ == "__main__":
     mi_conexion = connector()
     
     if mi_conexion:
         cursor = mi_conexion.cursor()
         
-        print("=== PURIFIED WATER SYSTEM ===")
-        print("1. Register a new sale")
-        print("2. Search for an existing order")
-        menu = input("Choose an option (1 or 2): ").strip()
-        
+        menu(menu)
+    
         if menu == "1":
             print("\n\t -----Sales software for purified water-----\t\n")
 
