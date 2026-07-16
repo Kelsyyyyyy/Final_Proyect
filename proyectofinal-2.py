@@ -1,6 +1,7 @@
 # Install nanoid to run
 
 import mysql.connector
+from datetime import datetime
 from mysql.connector import Error
 from nanoid import generate
 
@@ -41,7 +42,7 @@ def connector():
 
 
 def close_conection(conection):
-    if conection is None and conection.is_connected():
+    if conection is not None and conection.is_connected():
         conection.close()
         print("The conection to MySQL has been closed ")
 
@@ -114,26 +115,58 @@ def validator_ID(message):
 
 def search_order(cursor):
     print("\n\t -----Search Order-----\t\n")
-    search_id = input("Enter the Ticket ID to search: ").strip()
-    validator_ID(search_id)
-    sql = "SELECT * FROM litros WHERE ID = %s"
-    try:
-        cursor.execute(sql, (search_id,))
-        register = cursor.fetchone()
+    print("Select an option: \n 1. Search by Ticket ID \n 2. View all orders \n 3. Return to main menu")
+    option = input("Choose an option (1, 2, or 3): ").strip()
+    if option == "1":
+        search_id = input("Enter the Ticket ID to search: ").strip()
 
-        if register is None:
-            print(f"\n Order with ID [{search_id}] not found in the database.")
-            return
+        validator_ID(search_id)
+        sql = "SELECT * FROM litros WHERE ID = %s"
+        try:
+            cursor.execute(sql, (search_id,))
+            register = cursor.fetchone()
 
-        print(f" Ticket ID:   {register[0]}")
-        print(f" Total Water: {register[1]} Liters")
-        print(f" Total Paid:  ${register[2]:.2f} MXN")
-        print(f" Date:        {register[3]}")
-        print(f" Time:        {register[4]}")
+            if register is None:
+                print(
+                    f"\n Order with ID [{search_id}] not found in the database.")
+                return
 
-    except Error as e:
-        print(f" Error executing search query: {e}")
-    input("\nPress Enter to return to the main menu...")
+            print(f" Ticket ID:   {register[0]}")
+            print(f" Total Water: {register[1]} Liters")
+            print(f" Total Paid:  ${register[2]:.2f} MXN")
+            print(f" Date:        {register[3]}")
+            print(f" Time:        {register[4]}")
+
+        except Error as e:
+            print(f" Error executing search query: {e}")
+        input("\nPress Enter to return to the main menu...")
+
+    elif option == "2":
+        sql = "SELECT * FROM litros"
+        try:
+            cursor.execute(sql)
+            registers = cursor.fetchall()
+
+            if not registers:
+                print("\n No orders found in the database.")
+                return
+
+            print("\n" + "=" * 72)
+            print(
+                f"{'Ticket ID':<12}{'Liters':<10}{'Price':<15}{'Date':<15}{'Time':<12}")
+            print("=" * 72)
+
+            for register in registers:
+                print(
+                    f"{register[0]:<12}{register[1]:<10}{'$'+format(register[2], '.2f'):<15}{str(register[3]):<15}{str(register[4]):<12}")
+
+            print("=" * 72)
+
+        except Error as e:
+            print(f" Error executing search query: {e}")
+        input("\nPress Enter to return to the main menu...")
+    elif option == "3":
+        return
 
 
 def menu():
@@ -146,7 +179,7 @@ def menu():
     return menu_p
 
 
-def venta(datos):
+def venta(datos, cursor, mi_conexion):
     print("\n\t -----Sales software for purified water-----\t\n")
 
     while datos["repeticion"] == "yes":
@@ -160,10 +193,16 @@ def venta(datos):
             "What did the costumer bought? 1.Half 2.Full 3.Liter(Choose an option 1, 2 or 3): ", datos)
         acumc_l += litros
         acumc_p += costo
-        fecha = input(
-            " Date of the order (Format: YYYY-MM-DD, Example: 2026-01-02): ")
-        hora = input(
-            " Put the hour of the order (Format 24h: HH:MM:SS, Example: 23:59:00): ")
+
+        # Automaticamente obtener fecha y hora de la orden
+        ahora = datetime.now()
+        fecha = ahora.strftime("%Y-%m-%d")
+        hora = ahora.strftime("%H:%M:%S")
+        # Pedir fecha y hora de la orden
+        # fecha = input(
+        # " Date of the order (Format: YYYY-MM-DD, Example: 2026-01-02): ")
+        # hora = input(
+        # " Put the hour of the order (Format 24h: HH:MM:SS, Example: 23:59:00): ")
 
         extra = pedir_sino("Did the costumer bought more? (Yes/No): ")
         while extra == "yes":
@@ -197,6 +236,8 @@ def venta(datos):
 
         mostrar_resumen(datos["i"], datos["acumt_l"],
                         datos["acumt_p"], datos["total_descuento"], ID_client)
+        print("end of the day")
+        input("\nPress Enter to return to the main menu...")
 
 
 starting()
@@ -215,12 +256,13 @@ def main():
             menu_p = menu()
 
             if menu_p == "1":
-                venta(datos)
+                venta(datos, cursor, mi_conexion)
                 # BUSCAR ORDEN
             elif menu_p == "2":
                 search_order(cursor)
             elif menu_p == "3":
                 print("Exiting the program.")
+
             else:
                 print("Invalid option chosen.")
 
@@ -228,6 +270,9 @@ def main():
             close_conection(mi_conexion)
     else:
         print("Could not establish connection to the database.")
+
+    cursor.close()
+    close_conection(mi_conexion)
 
 
 main()
