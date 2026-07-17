@@ -263,11 +263,9 @@ def main():
             elif menu_p == "3":
                 print("Exiting the program.")
 
-            else:
-                print("Invalid option chosen.")
+        else:
+            print("Invalid option chosen.")
 
-            cursor.close()
-            close_conection(mi_conexion)
     else:
         print("Could not establish connection to the database.")
 
