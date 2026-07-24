@@ -28,7 +28,8 @@ def inputt(text):
 def show_menu():
     console.print(Panel(
         '[bold cyan]1.[/bold cyan] Register a new sale\n'
-        "[bold cyan]2.[/bold cyan] Search for an existing order",
+        "[bold cyan]2.[/bold cyan] Search for an existing order\n"
+        "[bold cyan]3.[/bold cyan]  Exit the program",
         title='PURIFIED WATER SYSTEM',
         border_style= "blue"
         ))
