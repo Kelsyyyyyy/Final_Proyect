@@ -2,9 +2,11 @@
 import mysql.connector
 from mysql.connector import Error
 from nanoid import generate
+from UI import titulo, subtitulo, captura, error, alerta, inputt, show_menu, final_ticket, resume, ticketID
 
 def starting():
-    return
+    titulo("Purified Water")
+    global PRECIO_MEDIO, PRECIO_COMPLETO, PRECIO_LITRO, i, acumt_l, acumt_p, total_descuento, repeticion
     PRECIO_MEDIO = 10
     PRECIO_COMPLETO = 18
     PRECIO_LITRO = 4
@@ -22,14 +24,14 @@ def connector():
                 host="localhost",
                 user="root",
                 password="",
-                database="usuario",
+                database="Usuario",
                 port=3306
                 )
         if conection.is_connected():
-            print("The connection has been sucessful ")
+            subtitulo("The connection has been sucessful ")
             return conection
     except Error as e:
-        print(f"Error connection MySQL: {e} ")
+        error(f"Error connection MySQL: {e} ")
         return None
 def close_conection(conection):
     if conection is None and conection.is_connected():
@@ -43,7 +45,7 @@ def ID():
 
 def obtener_producto(mensaje):
     while True:
-        caso = input(mensaje).lower().strip()
+        caso = inputt(mensaje).lower().strip()
         if caso == "half":
             return 10, PRECIO_MEDIO
         elif caso == "full":
@@ -51,14 +53,14 @@ def obtener_producto(mensaje):
         elif caso == "liter":
             return 1, PRECIO_LITRO
         else:
-            print("  ⚠ Invalid option. Write: Half, Full or Liter.")
+            alerta("  ⚠ Invalid option. Write: Half, Full or Liter.")
 
 def pedir_sino(mensaje):
     while True:
-        respuesta = input(mensaje).lower().strip()
+        respuesta = inputt(mensaje).lower().strip()
         if respuesta in ("yes", "no"):
             return respuesta
-        print("  ⚠ Invalid Answer. Write: Yes or No.")
+        alerta("  ⚠ Invalid Answer. Write: Yes or No.")
 
 def calcular_totales(litros, precio):
     descuento = precio * 0.10 if litros >= 20 else 0
@@ -96,8 +98,8 @@ def validator_ID(message):
         return validator_ID(message)
 
 def search_order(cursor):
-    print("\n\t -----Search Order-----\t\n")
-    search_id = input("Enter the Ticket ID to search: ").strip()
+    subtitulo("Search Order")
+    search_id = inputt("Enter the Ticket ID to search: ").strip()
     validator_ID(search_id)
     sql = "SELECT * FROM litros WHERE ID = %s"
     try:
@@ -105,24 +107,19 @@ def search_order(cursor):
         register = cursor.fetchone()
 
         if register is None:
-            print(f"\n Order with ID [{search_id}] not found in the database.")
+            alerta(f"\n Order with ID [{search_id}] not found in the database.")
             return
 
-        print(f" Ticket ID:   {register[0]}")
-        print(f" Total Water: {register[1]} Liters")
-        print(f" Total Paid:  ${register[2]:.2f} MXN")
-        print(f" Date:        {register[3]}")
-        print(f" Time:        {register[4]}")
+        ticketID(
+            register[0], 
+            register[1], 
+            register[2], 
+            register[3], 
+            register[4])
         
     except Error as e:
         print(f" Error executing search query: {e}")
 
-def menu(menu):   
-        print("=== PURIFIED WATER SYSTEM ===")
-        print("1. Register a new sale")
-        print("2. Search for an existing order")
-        menu = input("Choose an option (1 or 2): ").strip()
-        return menu
 
 def venta():
     print("\n\t -----Sales software for purified water-----\t\n")
@@ -153,19 +150,19 @@ def venta():
                 total_descuento += descuento
                 acumt_p += total_con_iva
                 
-                mostrar_ticket(ID_client, acumc_l, acumc_p, descuento, iva, total_con_iva)
+                final_ticket(ID_client, acumc_l, acumc_p, descuento, iva, total_con_iva)
                 
                 try:
                     query = "INSERT INTO litros (ID, litros, precio, fecha, hora) VALUES (%s, %s, %s, %s, %s)"
                     cursor.execute(query, (ID_client, acumc_l, total_con_iva, fecha, hora))
                     mi_conexion.commit() 
-                    print("  Sell registered on the database! ")
+                    subtitulo("  Sell registered on the database! ")
                 except Error as e:
-                    print(f"  Error saving on the database: {e}")
+                    error(f"  Error saving on the database: {e}")
                     
                 repeticion = pedir_sino("\nDo you wish to make another order? (Yes/No): ")
                 
-            mostrar_resumen(i, acumt_l, acumt_p, total_descuento)
+                resume(i, acumt_l, acumt_p, total_descuento)
 starting()
 
 #IMPORTANTE ARREGLAR DESMADRE
@@ -175,23 +172,23 @@ if __name__ == "__main__":
     if mi_conexion:
         cursor = mi_conexion.cursor()
         
-        menu(menu)
+        option = show_menu()
     
-        if menu == "1":
-            print("\n\t -----Sales software for purified water-----\t\n")
+        if option == "1":
+            titulo("\n\t PURIFIED WATER SALES\t\n")
 
             while repeticion == "yes":
                 ID_client = ID()
                 i += 1
                 acumc_l = 0
                 acumc_p = 0
-                print(f"\n\t  Capture {i}  \t\n")
+                captura(i)
 
                 litros, costo = obtener_producto("What did the costumer bought? (Half/Full/Liter): ")
                 acumc_l += litros
                 acumc_p += costo
-                fecha = input(" Date of the order (Format: YYYY-MM-DD, Example: 2026-01-02): ")
-                hora = input(" Put the hour of the order (Format 24h: HH:MM:SS, Example: 23:59:00): ")
+                fecha = inputt(" Date of the order (Format: YYYY-MM-DD, Example: 2026-01-02): ")
+                hora = inputt(" Put the hour of the order (Format 24h: HH:MM:SS, Example: 23:59:00): ")
                 
                 extra = pedir_sino("Did the costumer bought more? (Yes/No): ")
                 while extra == "yes":
@@ -206,21 +203,21 @@ if __name__ == "__main__":
                 total_descuento += descuento
                 acumt_p += total_con_iva
                 
-                mostrar_ticket(ID_client, acumc_l, acumc_p, descuento, iva, total_con_iva)
+                final_ticket(ID_client, acumc_l, acumc_p, descuento, iva, total_con_iva)
                 
                 try:
                     query = "INSERT INTO litros (ID, litros, precio, fecha, hora) VALUES (%s, %s, %s, %s, %s)"
                     cursor.execute(query, (ID_client, acumc_l, total_con_iva, fecha, hora))
                     mi_conexion.commit() 
-                    print("  Sell registered on the database! ")
+                    subtitulo("  Sell registered on the database! ")
                 except Error as e:
-                    print(f"  Error saving on the database: {e}")
+                    error(f"  Error saving on the database: {e}")
                     
                 repeticion = pedir_sino("\nDo you wish to make another order? (Yes/No): ")
                 
-            mostrar_resumen(i, acumt_l, acumt_p, total_descuento)
+            resume(i, acumt_l, acumt_p, total_descuento, ID_client)
         #BUSCAR ORDEN
-        elif menu == "2":
+        elif option == "2":
             search_order(cursor)
         else:
             print("Invalid option chosen.")
