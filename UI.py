@@ -9,7 +9,7 @@ from rich import box
 console= Console()
 
 def titulo(text) :
-    art = figlet_format (text, font='straight')
+    art = figlet_format (text, font='doom')
     console.print(Align.center(f"[#0022FF]{art}[/#0022FF]"))
 
 def subtitulo(text) :
@@ -33,7 +33,7 @@ def show_menu():
         title='PURIFIED WATER SYSTEM',
         border_style= "blue"
         ))
-    return Prompt.ask ("Choose an option", choices= ["1", "2"])
+    return Prompt.ask ("Choose an option", choices= ["1", "2", "3"])
 def final_ticket (num_cliente, litros, subtotal, descuento, iva, total):
     table = Table(title=f"Ticket - Client {num_cliente}")
     table.add_column ("Concept", style="cyan")
@@ -83,4 +83,26 @@ def ticketID (ID_client, acumc_1, total_con_iva, fecha, hora):
 
     console.print(table)
 
+def salida ():
+    console.print("[bold red]Press ENTER to return to main menu...[/bold red]")
+    input()
+
+def all_orders(registers):
+    table = Table(title="All Orders", border_style="bright_blue", box=box.ROUNDED)
+    table.add_column("Ticket ID", style="cyan")
+    table.add_column("Liters", justify="right", style="green")
+    table.add_column("Price", justify="right", style="green")
+    table.add_column("Date", style="cyan")
+    table.add_column("Time", style="cyan")
+
+    for register in registers:
+        table.add_row(
+            str(register[0]),
+            str(register[1]),
+            f"${register[2]:.2f}",
+            str(register[3]),
+            str(register[4])
+        )
+
+    console.print(table)
 

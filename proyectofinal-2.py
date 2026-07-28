@@ -4,7 +4,8 @@ import mysql.connector
 from datetime import datetime
 from mysql.connector import Error
 from nanoid import generate
-from UI import titulo, subtitulo, captura, error, alerta, inputt, show_menu, final_ticket, resume, ticketID
+from UI import console
+from UI import titulo, subtitulo, captura, error, alerta, inputt, show_menu, final_ticket, resume, ticketID, salida, all_orders
 
 
 def starting():
@@ -49,7 +50,7 @@ def connector():
 def close_conection(conection):
     if conection is not None and conection.is_connected():
         conection.close()
-        print("The conection to MySQL has been closed ")
+        console.print("[italic red] The conection to MySQL has been closed [/italic red]")
 
 
 def ID():
@@ -108,21 +109,21 @@ def mostrar_resumen(clientes, total_litros, total_pesos, total_descuentos, ID_cl
         print(f"  Average liters/client:  {total_litros / clientes:.2f} L")
         print(f"  Average sell/client:   ${total_pesos / clientes:.2f}")
     else:
-        print("  No costumers were served; there is not average to calculate.")
+        alerta("  No costumers were served; there is not average to calculate.")
 
 
 def validator_ID(message):
     try:
         return message
     except ValueError:
-        print("You must enter a number ")
+        alerta("You must enter a number ")
         return validator_ID(message)
 
 
 def search_order(cursor):
 
     subtitulo("Search Order")
-    print("Select an option: \n 1. Search by Ticket ID \n 2. View all orders \n 3. Return to main menu")
+    console.print("[italic cyan] Select an option: \n 1. Search by Ticket ID \n 2. View all orders \n 3. Return to main menu [/italic cyan]")
     option = inputt("Choose an option (1, 2, or 3): ").strip()
     if option == "1":
         search_id = inputt("Enter the Ticket ID to search: ").strip()
@@ -148,7 +149,7 @@ def search_order(cursor):
 
         except Error as e:
             error(f" Error executing search query: {e}")
-        input("\nPress Enter to return to the main menu...")
+        salida()
 
     elif option == "2":
         sql = "SELECT * FROM litros"
@@ -157,23 +158,14 @@ def search_order(cursor):
             registers = cursor.fetchall()
 
             if not registers:
-                print("\n No orders found in the database.")
+                alerta("\n No orders found in the database.")
                 return
 
-            print("\n" + "=" * 72)
-            print(
-                f"{'Ticket ID':<12}{'Liters':<10}{'Price':<15}{'Date':<15}{'Time':<12}")
-            print("=" * 72)
-
-            for register in registers:
-                print(
-                    f"{register[0]:<12}{register[1]:<10}{'$'+format(register[2], '.2f'):<15}{str(register[3]):<15}{str(register[4]):<12}")
-
-            print("=" * 72)
+            all_orders(registers)
 
         except Error as e:
             error(f" Error executing search query: {e}")
-        input("\nPress Enter to return to the main menu...")
+        salida()
     elif option == "3":
         return
 
@@ -181,14 +173,14 @@ def search_order(cursor):
 
 
 def venta(datos, cursor, mi_conexion):
-    print("\n\t -----Sales software for purified water-----\t\n")
+    titulo("Sales software for purified water")
 
     while datos["repeticion"] == "yes":
         ID_client = ID()
         datos["i"] += 1
         acumc_l = 0
         acumc_p = 0
-        print(f"\n\t  Capture {datos['i']}  \t\n")
+        captura(datos['i'])
 
         litros, costo = obtener_producto(
             "What did the costumer bought? 1.Half 2.Full 3.Liter(Choose an option 1, 2 or 3): ", datos)
@@ -237,11 +229,9 @@ def venta(datos, cursor, mi_conexion):
 
         resume(datos["i"], datos["acumt_l"],
                         datos["acumt_p"], datos["total_descuento"], ID_client)
-        print("end of the day")
-        input("\nPress Enter to return to the main menu...")
+        console.print("[italic cyan] End of the day [/italic cyan]")
+        salida()
 
-
-starting()
 
 
 def main():
@@ -262,16 +252,15 @@ def main():
             elif menu_p == "2":
                 search_order(cursor)
             elif menu_p == "3":
-                subtitulo("Exiting the program.")
+                titulo("Thank you for your preference")
+            else:
+                error("Invalid option chosen.")
 
-        else:
-            error("Invalid option chosen.")
+        cursor.close()
+        close_conection(mi_conexion)
 
     else:
         error("Could not establish connection to the database.")
-
-    cursor.close()
-    close_conection(mi_conexion)
 
 
 main()
